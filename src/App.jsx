@@ -1,59 +1,55 @@
-import { useState } from 'react'
+// src/App.jsx
+import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuth } from './context/AuthContext'
 import LoginPage from './pages/LoginPage'
 import SignUpPage from './pages/SignUpPage'
 import { supabase } from './supabaseClient'
 
-export default function App() {
-  // 1. Get the current user from the AuthContext we created
-  const { user, loading } = useAuth()
+// 🔖 A quick placeholder for your Bookmark page since your login redirects here!
+function BookmarkPage() {
+  const { currentUser } = useAuth()
 
-  // 2. State to toggle between showing the Login page or the Sign Up page
-  const [showLogin, setShowLogin] = useState(true)
-
-  // If Supabase is still checking if the user is logged in, show a loading message
-  if (loading) {
-    return <div style={{ padding: '50px' }}>Loading...</div>
-  }
-
-  // If the user IS logged in, show them the "Shop" (for now, a welcome screen)
-  if (user) {
-    return (
-      <div style={{ padding: '50px' }}>
-        <h1>Welcome to the Shop! 🛒</h1>
-        <p>You are successfully logged in as: <strong>{user.email}</strong></p>
-
-        <button 
-          onClick={() => supabase.auth.signOut()}
-          style={{ padding: '10px', marginTop: '20px', cursor: 'pointer' }}
-        >
-          Log Out
-        </button>
-      </div>
-    )
-  }
-
-  // If the user is NOT logged in, show them the Login or Sign Up page
   return (
-    <div style={{ padding: '50px', maxWidth: '400px', margin: '0 auto' }}>
-
-      {/* Show either the Login component OR the SignUp component */}
-      {showLogin ? <LoginPage /> : <SignUpPage />}
-
-      <hr style={{ margin: '30px 0' }} />
-
-      {/* Button to switch between the two pages */}
-      <p style={{ textAlign: 'center' }}>
-        {showLogin ? "Don't have an account?" : "Already have an account?"}
-      </p>
-
+    <div style={{ padding: '50px', textAlign: 'center' }}>
+      <h1>Your Bookmarks 🔖</h1>
+      <p>Welcome, <strong>{currentUser?.email}</strong></p>
+      <br />
       <button 
-        onClick={() => setShowLogin(!showLogin)}
-        style={{ width: '100%', padding: '10px', cursor: 'pointer' }}
+        onClick={() => supabase.auth.signOut()}
+        style={{ padding: '10px 20px', cursor: 'pointer', backgroundColor: '#db4437', color: 'white', border: 'none', borderRadius: '5px' }}
       >
-        {showLogin ? "Go to Sign Up" : "Go to Log In"}
+        Log Out
       </button>
-
     </div>
+  )
+}
+
+export default function App() {
+  // ✅ Changed 'user' to 'currentUser' to match your Context!
+  const { currentUser, loading } = useAuth()
+
+  // Wait for Supabase to check if logged in
+  if (loading) {
+    return <div style={{ padding: '50px', textAlign: 'center' }}>Loading...</div>
+  }
+
+  return (
+    <Routes>
+      {/* 1. Default Route: If logged in, go to bookmarks. If not, go to login. */}
+      <Route 
+        path="/" 
+        element={currentUser ? <Navigate to="/bookmark" /> : <Navigate to="/login" />} 
+      />
+
+      {/* 2. Auth Routes */}
+      <Route path="/login" element={<LoginPage />} />
+      <Route path="/signup" element={<SignUpPage />} />
+
+      {/* 3. Protected Route: Only show bookmarks if logged in */}
+      <Route 
+        path="/bookmark" 
+        element={currentUser ? <BookmarkPage /> : <Navigate to="/login" />} 
+      />
+    </Routes>
   )
 }

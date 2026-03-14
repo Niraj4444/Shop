@@ -1,38 +1,41 @@
-import { createContext, useContext, useEffect, useState } from 'react'
-import { supabase } from '../supabaseClient'
+// src/context/AuthContext.jsx
+import React, { useContext, createContext, useState, useEffect } from "react";
+import { supabase } from "../supabaseClient"; // Make sure this path is correct
 
-// 1. Create the Context
-const AuthContext = createContext()
+const AuthContext = createContext({
+  currentUser: null,
+  loading: true,
+});
 
-// 2. Create the Provider Component
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    // Check active sessions and sets the user
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null)
-      setLoading(false)
-    })
-
-    // Listen for changes on auth state (login, sign out, etc.)
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null)
-    })
-
-    // Cleanup subscription on unmount
-    return () => subscription.unsubscribe()
-  }, [])
-
-  return (
-    <AuthContext.Provider value={{ user, loading }}>
-      {!loading && children}
-    </AuthContext.Provider>
-  )
+export function useAuth() {
+  return useContext(AuthContext);
 }
 
-// 3. Custom hook to easily use the auth context anywhere
-export const useAuth = () => {
-  return useContext(AuthContext)
+export function AuthProvider({ children }) {
+  const [currentUser, setCurrentUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    // 1. Get the session on initial load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setCurrentUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    // 2. Listen for login/logout events (Equivalent to onAuthStateChanged)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setCurrentUser(session?.user ?? null);
+      setLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const value = { currentUser, loading };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {!loading && children} {/* prevent flicker */}
+    </AuthContext.Provider>
+  );
 }
