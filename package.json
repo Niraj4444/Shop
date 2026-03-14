@@ -21,6 +21,7 @@
     "vite": "^5.0.0"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.99.1",
     "react-router-dom": "^7.13.1"
   }
 }
